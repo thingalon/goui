@@ -1,6 +1,9 @@
 package goui
 
-import "C"
+import (
+	"C"
+	"fmt"
+)
 
 const (
 	WindowTitled = 0
@@ -9,6 +12,10 @@ const (
 	WindowResizable = 1 << iota
 	WindowMinimizable = 1 << iota
 	WindowModal = 1 << iota
+)
+
+var (
+	nextWindowId = 1
 )
 
 type WindowOptions struct {
@@ -36,25 +43,29 @@ type WindowOptions struct {
 }
 
 type Window struct {
-	handle C.int 
+	handle int
 	closeHandler func(window *Window)
 	pushQueue chan *Message
 }
 
-var openWindows map[C.int]*Window;
+var openWindows map[int]*Window;
 
 func init() {
-	openWindows = make(map[C.int]*Window);
+	openWindows = make(map[int]*Window);
 }
 
 func OpenWindow(options WindowOptions) *Window {
-	url := serverAddress + "assets/" + options.Template
-
+	windowId := nextWindowId
+	nextWindowId++
+	
+	url := fmt.Sprintf("%sassets/%s#%d", serverAddress, options.Template, windowId)
+	
 	//	Open a window
 	window := &Window{
-		handle: osOpenWindow(url, options.StyleFlags),
+		handle: windowId,
 		pushQueue: make(chan *Message, 10),
-	}
+	}	
+	osOpenWindow(window, url, options.StyleFlags)
 	
 	//	Give it a title (if one has been specified)
 	if options.Title != "" {
@@ -107,35 +118,35 @@ func OpenWindow(options WindowOptions) *Window {
 
 	//	Remember geometry.
 	if options.RememberGeometry {
-		osRememberGeometry(window.handle, options.Template)
+		osRememberGeometry(window, options.Template)
 	}
 
 	openWindows[window.handle] = window
 	
 	if options.StyleFlags & WindowModal > 0	{
-		osRunModal(window.handle)
+		osRunModal(window)
 	}
 	
 	return window;
 }
 
 func GetWindow(id int) *Window {
-	if window, ok := openWindows[C.int(id)]; ok {
+	if window, ok := openWindows[id]; ok {
 		return window
 	}
 	return nil
 }
 
 func (window *Window) SetTitle(title string) {
-	osSetWindowTitle(window.handle, title)
+	osSetWindowTitle(window, title)
 }
 
 func (window *Window) SetSize(width int, height int) {
-	osSetWindowSize(window.handle, width, height)
+	osSetWindowSize(window, width, height)
 }
 
 func (window *Window) SetPosition(left int, top int) {
-	osSetWindowPosition(window.handle, left, top)
+	osSetWindowPosition(window, left, top)
 }
 
 func (window *Window) SetCloseHandler(handler func(window *Window)) {
@@ -147,6 +158,6 @@ func (window *Window) Send(message Message) {
 }
 
 func (window *Window) Close() {
-	osCloseWindow(window.handle)
+	osCloseWindow(window)
 	delete(openWindows, window.handle)
 }

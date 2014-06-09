@@ -24,7 +24,7 @@ func osInit() {
 	C.StartApp()
 }
 
-func osOpenWindow(url string, styleFlags int) C.int {
+func osOpenWindow(window *Window, url string, styleFlags int) {
 	var nsflags C.int
 
 	//	Translate goui window flags to Cocoa window flags...
@@ -46,19 +46,19 @@ func osOpenWindow(url string, styleFlags int) C.int {
 		}
 	}
 	
-	return C.OpenWindow(C.CString(url), nsflags, styleFlags & WindowModal > 0)
+	C.OpenWindow(C.int(window.handle), C.CString(url), nsflags, styleFlags & WindowModal > 0)
 }
 
 func osStop() {
 	C.StopApp()
 }
 
-func osCloseWindow(handle C.int) {
-	C.CloseWindow(handle)
+func osCloseWindow(window *Window) {
+	C.CloseWindow(C.int(window.handle))
 }
 
-func osSetWindowTitle(handle C.int, title string) {
-	C.SetWindowTitle(handle, C.CString(title))
+func osSetWindowTitle(window *Window, title string) {
+	C.SetWindowTitle(C.int(window.handle), C.CString(title))
 }
 
 func osGetScreenSize() (int, int) {
@@ -67,19 +67,19 @@ func osGetScreenSize() (int, int) {
 	return int(width), int(height)
 }
 
-func osSetWindowSize(handle C.int, width int, height int) {
-	C.SetWindowSize(handle, C.int(width), C.int(height))
+func osSetWindowSize(window *Window, width int, height int) {
+	C.SetWindowSize(C.int(window.handle), C.int(width), C.int(height))
 }
 
-func osSetWindowPosition(handle C.int, left int, top int) {
-	C.SetWindowPosition(handle, C.int(left), C.int(top))
+func osSetWindowPosition(window *Window, left int, top int) {
+	C.SetWindowPosition(C.int(window.handle), C.int(left), C.int(top))
 }
 
-func osRememberGeometry(handle C.int, key string) {
-	C.RememberWindowGeometry(handle, C.CString(key))
+func osRememberGeometry(window *Window, key string) {
+	C.RememberWindowGeometry(C.int(window.handle), C.CString(key))
 }
 
-func osRunModal(handle C.int) {
-	C.RunModal(handle)
+func osRunModal(window *Window) {
+	C.RunModal(C.int(window.handle))
 }
 

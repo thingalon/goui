@@ -22,7 +22,6 @@ struct ScreenList {
 //
 
 NSMutableDictionary* windowLookup;
-int nextWindowId;
 
 //
 //	Browser Delegate: Catches load notifications, and sets the window title based on document title.
@@ -138,14 +137,10 @@ AppDelegate* appDelegate;
 //	OpenWindow; exported method, callable from Go code. Calls App Delegate's open window function in the main NSApp thread. Returns an int window handle.
 //
 
-int OpenWindow(const char* url, int flags, bool modal) {
-	int id = nextWindowId++;
-	
+void OpenWindow(int windowId, const char* url, int flags, bool modal) {
 	dispatch_sync(dispatch_get_main_queue(), ^{
-		[appDelegate openWindow:url withId:id withFlags:flags asModal:modal];
+		[appDelegate openWindow:url withId:windowId withFlags:flags asModal:modal];
 	});
-	
-	return id;
 }
 
 //
@@ -175,7 +170,6 @@ int StartApp() {
 	browserDelegate = [[BrowserDelegate new] autorelease];
 	windowDelegate = [[WindowDelegate new] autorelease];
 	windowLookup = [NSMutableDictionary dictionary];
-	nextWindowId = 1;
 
 	[[NSUserDefaults standardUserDefaults] registerDefaults:[NSDictionary dictionaryWithObjectsAndKeys:
 		[NSNumber numberWithBool:YES], @"WebKitDeveloperExtras",
