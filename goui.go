@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"io/ioutil"
 	"encoding/json"
-	"github.com/toqueteos/webbrowser"
 )
 
 type Data map[string]interface{}
@@ -66,10 +65,6 @@ func SetAssetPath(a string) {
 
 func GetScreenSize() (width int, height int) {
 	return osGetScreenSize()
-}
-
-func OpenInBrowser(template string) {
-	webbrowser.Open(serverAddress + "assets/" + template)
 }
 
 func waitForReady(portChannel chan int, callback func()) {
@@ -179,7 +174,6 @@ func handleAjaxRequest(responseWriter http.ResponseWriter, rawRequest *http.Requ
 		return;
 	}
 	
-
 	//	Find the window that sent this message
 	var window *Window
 	if windowId, ok := request.Params["windowId"].(float64); ok {

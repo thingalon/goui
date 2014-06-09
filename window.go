@@ -3,6 +3,7 @@ package goui
 import (
 	"C"
 	"fmt"
+	"github.com/toqueteos/webbrowser"
 )
 
 const (
@@ -40,12 +41,14 @@ type WindowOptions struct {
 	PercentTop float64
 	
 	RememberGeometry bool
+	OpenInBrowser bool
 }
 
 type Window struct {
 	handle int
 	closeHandler func(window *Window)
 	pushQueue chan *Message
+	isBrowser bool
 }
 
 var openWindows map[int]*Window;
@@ -60,67 +63,73 @@ func OpenWindow(options WindowOptions) *Window {
 	
 	url := fmt.Sprintf("%sassets/%s#%d", serverAddress, options.Template, windowId)
 	
-	//	Open a window
 	window := &Window{
 		handle: windowId,
 		pushQueue: make(chan *Message, 10),
 	}	
-	osOpenWindow(window, url, options.StyleFlags)
-	
-	//	Give it a title (if one has been specified)
-	if options.Title != "" {
-		window.SetTitle(options.Title)
-	}
 
-	//	Resize it.
-	screenWidth, screenHeight := GetScreenSize()
-	width, height := 100, 50
-
-	switch {
-		case options.PixelWidth > 0:
-			width = options.PixelWidth
-		case options.PercentWidth > 0:
-			width = int((options.PercentWidth * float64(screenWidth)) / 100)
+	if options.OpenInBrowser {
+		//	Open in a browser if specified
+		webbrowser.Open(url)
+	} else {
+		//	Open a window
+		osOpenWindow(window, url, options.StyleFlags)
+		
+		//	Give it a title (if one has been specified)
+		if options.Title != "" {
+			window.SetTitle(options.Title)
+		}
+	
+		//	Resize it.
+		screenWidth, screenHeight := GetScreenSize()
+		width, height := 100, 50
+	
+		switch {
+			case options.PixelWidth > 0:
+				width = options.PixelWidth
+			case options.PercentWidth > 0:
+				width = int((options.PercentWidth * float64(screenWidth)) / 100)
+		}
+		
+		switch {
+			case options.PixelHeight > 0:
+				height = options.PixelHeight
+			case options.PercentHeight > 0:
+				height = int((options.PercentHeight * float64(screenHeight)) / 100)
+		}
+		
+		window.SetSize(width, height)
+		
+		//	Position it
+		top, left := 0, 0
+		
+		switch {
+			case options.PixelLeft > 0:
+				left = options.PixelLeft
+			case options.PercentLeft > 0:
+				left = int((options.PercentLeft * float64(screenWidth)) / 100)
+		}
+		
+		switch {
+			case options.PixelTop > 0:
+				top = options.PixelTop
+			case options.PercentTop > 0:
+				top = int((options.PercentTop * float64(screenHeight)) / 100)
+		}
+		
+		if options.Centered {
+			left = (screenWidth - width) / 2
+			top = (screenHeight - height) / 2
+		}
+		
+		window.SetPosition(left, top)
+	
+		//	Remember geometry.
+		if options.RememberGeometry {
+			osRememberGeometry(window, options.Template)
+		}
 	}
 	
-	switch {
-		case options.PixelHeight > 0:
-			height = options.PixelHeight
-		case options.PercentHeight > 0:
-			height = int((options.PercentHeight * float64(screenHeight)) / 100)
-	}
-	
-	window.SetSize(width, height)
-	
-	//	Position it
-	top, left := 0, 0
-	
-	switch {
-		case options.PixelLeft > 0:
-			left = options.PixelLeft
-		case options.PercentLeft > 0:
-			left = int((options.PercentLeft * float64(screenWidth)) / 100)
-	}
-	
-	switch {
-		case options.PixelTop > 0:
-			top = options.PixelTop
-		case options.PercentTop > 0:
-			top = int((options.PercentTop * float64(screenHeight)) / 100)
-	}
-	
-	if options.Centered {
-		left = (screenWidth - width) / 2
-		top = (screenHeight - height) / 2
-	}
-	
-	window.SetPosition(left, top)
-
-	//	Remember geometry.
-	if options.RememberGeometry {
-		osRememberGeometry(window, options.Template)
-	}
-
 	openWindows[window.handle] = window
 	
 	if options.StyleFlags & WindowModal > 0	{
@@ -138,19 +147,27 @@ func GetWindow(id int) *Window {
 }
 
 func (window *Window) SetTitle(title string) {
-	osSetWindowTitle(window, title)
+	if ! window.isBrowser {
+		osSetWindowTitle(window, title)
+	}
 }
 
 func (window *Window) SetSize(width int, height int) {
-	osSetWindowSize(window, width, height)
+	if ! window.isBrowser {
+		osSetWindowSize(window, width, height)
+	}
 }
 
 func (window *Window) SetPosition(left int, top int) {
-	osSetWindowPosition(window, left, top)
+	if ! window.isBrowser {
+		osSetWindowPosition(window, left, top)
+	}
 }
 
 func (window *Window) SetCloseHandler(handler func(window *Window)) {
-	window.closeHandler = handler;
+	if ! window.isBrowser {
+		window.closeHandler = handler;
+	}
 }
 
 func (window *Window) Send(message Message) {
@@ -158,6 +175,8 @@ func (window *Window) Send(message Message) {
 }
 
 func (window *Window) Close() {
-	osCloseWindow(window)
-	delete(openWindows, window.handle)
+	if ! window.isBrowser {
+		osCloseWindow(window)
+		delete(openWindows, window.handle)
+	}
 }

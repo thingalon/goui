@@ -6,13 +6,18 @@ const javascript = `
 		var messageQueue = [];
 		var windowId = 0;
 		var jsReady = false;
+
 		goui.SetMessageHandler = function(message, handler) {
 			messageHandlers[message] = handler;
 		}		
 		
 		goui.Init = function() {
-			jsReady = true;
-			internalInit();
+			windowId = window.location.hash.substr(1) - 0;
+			asyncLongPoll();
+
+			for (var i = 0; i < messageQueue.length; i++)
+				goui.SendMessage(messageQueue[i].type, messageQueue[i].params, messageQueue[i].options);					
+			messageQueue = [];
 		}
 		
 		goui.SendMessage = function(type, params, options) {
@@ -57,7 +62,6 @@ const javascript = `
 						options.complete();
 				}
 			};
-			alert( 'xhr' );
 			
 			params.windowId = windowId;
 			data = JSON.stringify({
@@ -69,16 +73,6 @@ const javascript = `
 			xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
 			xhr.send(data);
 		}
-		
-		function internalInit() {
-			if (jsReady && windowId > 0) {
-				asyncLongPoll();
-
-				for (var i = 0; i < messageQueue.length; i++)
-					goui.SendMessage(messageQueue[i].type, messageQueue[i].params, messageQueue[i].options);					
-				messageQueue = [];
-			}
-		}		
 		
 		function asyncLongPoll() {
 			setTimeout(longPoll, 0);
@@ -100,11 +94,6 @@ const javascript = `
 		function log(message) {
 			if (console && console.log)
 				console.log(message);
-		}
-		
-		goui._setWindowId = function(id) {
-			windowId = id;
-			internalInit();
 		}
 	})(window.goui = window.goui || {});
 `

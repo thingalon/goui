@@ -34,12 +34,6 @@ NSMutableDictionary* windowLookup;
 @implementation BrowserDelegate
 - (void)webView:(WebView *)sender didFinishLoadForFrame:(WebFrame *)frame
 {
-	//	Shove the window's ID into the document.
-	NSString* wkey = [NSString stringWithFormat:@"w%p", [sender window]];
-	int id = [[windowLookup valueForKey:wkey] intValue];
-	NSString* jsInject = [NSString stringWithFormat:@"alert('x'); goui._setWindowId(%d);", id];
-	[sender stringByEvaluatingJavaScriptFromString:jsInject];
-	
 	//	Get the HTML page title and use it as the window title.
 	NSString *title = [sender stringByEvaluatingJavaScriptFromString:@"document.title"];
 	[[sender window] setTitle: title];
