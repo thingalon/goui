@@ -9,34 +9,34 @@ const javascript = `
 
 		goui.SetMessageHandler = function(message, handler) {
 			messageHandlers[message] = handler;
-		}		
+		}
 		
 		goui.Init = function() {
 			windowId = window.location.hash.substr(1) - 0;
 			asyncLongPoll();
 
 			for (var i = 0; i < messageQueue.length; i++)
-				goui.SendMessage(messageQueue[i].type, messageQueue[i].params, messageQueue[i].options);					
+				goui.Send(messageQueue[i].type, messageQueue[i].params, messageQueue[i].options);					
 			messageQueue = [];
 		}
 		
-		goui.SendMessage = function(type, params, options) {
+		goui.Send = function(type, params, options) {
 			var messageSpec = {
 				type: type,
 				params: params,
 				options: options
 			};
 			if ( windowId > 0 )
-				internalSendMessage(messageSpec);
+				internalSend(messageSpec);
 			else
 				messageQueue.push(messageSpec);
 		}
 		
 		goui.CloseWindow = function() {
-			goui.SendMessage('goui.closeWindow')
+			goui.Send('goui.closeWindow')
 		}
 		
-		function internalSendMessage(messageSpec) {
+		function internalSend(messageSpec) {
 			var params = messageSpec.params || {};
 			var options = messageSpec.options || {};
 			var type = messageSpec.type;
@@ -79,7 +79,7 @@ const javascript = `
 		}
 		
 		function longPoll() {
-			goui.SendMessage('goui.longPoll', {}, {
+			goui.Send('goui.longPoll', {}, {
 				timeout: 300000000,
 				complete: asyncLongPoll,
 				success: function(message) {
