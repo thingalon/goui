@@ -3,7 +3,7 @@ package goui
 /*
 #cgo CFLAGS: -x objective-c
 #cgo LDFLAGS: -framework Cocoa -framework WebKit -framework IOKit
-#import "goui_osx.m"
+#import "goui_osx.m.txt"
 */
 import "C"
 
